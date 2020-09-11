@@ -37,9 +37,12 @@ const grid_size = 20;
 const grid_x = Math.floor(canvas_width / grid_size);
 const grid_y = Math.floor(canvas_height / grid_size);
 const background_color = '#abcdef';
-const snake_color = '#807060';
 const food_color = '#903060';
-const grid_line_color = '#aaaaaa';
+const grid_line_color = 'hsl(210, 75%, 79%)'; // #abcdef plus 7% sas, minus 1% lum
+
+const snake_color = 'hsl(30, 14%, 44%)'; // #807060
+const snake_hsl_body_start = 40;
+const snake_hsl_body_end = 0;
 
 const head_coords = [0, 0];
 const food_coords = [1, 1];
@@ -91,20 +94,32 @@ function draw(timestamp) {
 
     grid[ food_coords[0] ][ food_coords[1] ] = 2;
 
-    // The correct thing to do here is to only redraw grid squares that have changed.
-    // Let's not, though.
+    // Brute force redraw the background and food
     for (let y = 0; y < grid_y; y++) {
         for (let x = 0; x < grid_x; x++) {
             if(grid[y][x] == 0) {
                 ctx.fillStyle = background_color;
-            } else if(grid[y][x] == 1) {
-                ctx.fillStyle = snake_color;
             } else if(grid[y][x] == 2) {
                 ctx.fillStyle = food_color;
             }
             ctx.fillRect((x * grid_size) + 1, (y * grid_size) + 1, grid_size - 2, grid_size - 2);
         }
     }
+
+    // But make the snake pretty.  The use of hsl() in the color lets us just
+    // simply darken the original color to create a gradient.
+    let lum_change = Math.max(snake_hsl_body_start, snake_hsl_body_end) - Math.min(snake_hsl_body_start, snake_hsl_body_end);
+    let lum_change_per_unit = lum_change / snake_coords.length;
+    let lum = snake_hsl_body_end;
+    for (const snake_coord of snake_coords) {
+        ctx.fillStyle = `hsl(30, 14%, ${lum}%)`;
+        lum += lum_change_per_unit;
+
+        ctx.fillRect((snake_coord[1] * grid_size) + 1, (snake_coord[0] * grid_size) + 1, grid_size - 2, grid_size - 2);
+    }
+    // The head always gets the base color.
+    ctx.fillStyle = snake_color;
+    ctx.fillRect((head_coords[1] * grid_size) + 1, (head_coords[0] * grid_size) + 1, grid_size - 2, grid_size - 2);
 
     window.requestAnimationFrame(draw);
 }
