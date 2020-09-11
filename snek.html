@@ -138,10 +138,9 @@ function init_grid() {
     }
 }
 
+let grow_skip = 0;
 function move_head(x, y) {
     grid[ head_coords[0] ][ head_coords[1] ] = 0;
-    // Snake coordinates are stored oldest first, newest last.
-    snake_coords.shift();
 
     head_coords[0] += y;
     if (head_coords[0] >= grid_y) {
@@ -157,6 +156,17 @@ function move_head(x, y) {
     }
     if (head_coords[1] < 0) {
         head_coords[1] = grid_x - 1;
+    }
+
+    // The snake found the food => grow
+    if (grid[ head_coords[0] ][ head_coords[1] ] == 2) {
+        grow_skip += 2;
+    }
+
+    if (grow_skip > 0) {
+        grow_skip--;
+    } else {
+        snake_coords.shift();
     }
 
     grid[ head_coords[0] ][ head_coords[1] ] = 1;
