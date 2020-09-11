@@ -36,9 +36,14 @@ const grid = [];
 const grid_size = 20;
 const grid_x = Math.floor(canvas_width / grid_size);
 const grid_y = Math.floor(canvas_height / grid_size);
+const background_color = '#abcdef';
+const snake_color = '#807060';
+const food_color = '#903060';
+const grid_line_color = '#aaaaaa';
 
 const head_coords = [0, 0];
 const food_coords = [1, 1];
+const snake_coords = [ /* [y, x], [y, x], ... */ ];
 
 let start_time = 0;
 let last_time = 0;
@@ -55,20 +60,33 @@ function draw(timestamp) {
     }
     last_time = timestamp;
 
+    // The snake has moved.  Let's clear out the grid and re-mark the current
+    // snake positioning.  This could be done with more elegance instead of
+    // just dumb brute force, but keeping it dumb part of the purpose.
+    for (let y = 0; y < grid_y; y++) {
+        for (let x = 0; x < grid_x; x++) {
+            grid[y][x] = 0;
+        }
+    }
+
+    for (const snake_coord of snake_coords) {
+        grid[ snake_coord[0] ][ snake_coord[1] ] = 1;
+    }
+
+    grid[ food_coords[0] ][ food_coords[1] ] = 2;
+
+    // The correct thing to do here is to only redraw grid squares that have changed.
+    // Let's not, though.
     for (let y = 0; y < grid_y; y++) {
         for (let x = 0; x < grid_x; x++) {
             if(grid[y][x] == 0) {
-                ctx.fillStyle = '#abcdef';
-                ctx.fillRect((x * grid_size) + 1, (y * grid_size) + 1, grid_size - 2, grid_size - 2);
+                ctx.fillStyle = background_color;
+            } else if(grid[y][x] == 1) {
+                ctx.fillStyle = snake_color;
+            } else if(grid[y][x] == 2) {
+                ctx.fillStyle = food_color;
             }
-            if(grid[y][x] == 1) {
-                ctx.fillStyle = '#807060';
-                ctx.fillRect((x * grid_size) + 1, (y * grid_size) + 1, grid_size - 2, grid_size - 2);
-            }
-            if(grid[y][x] == 2) {
-                ctx.fillStyle = '#903060';
-                ctx.fillRect((x * grid_size) + 1, (y * grid_size) + 1, grid_size - 2, grid_size - 2);
-            }
+            ctx.fillRect((x * grid_size) + 1, (y * grid_size) + 1, grid_size - 2, grid_size - 2);
         }
     }
 
@@ -77,6 +95,7 @@ function draw(timestamp) {
 
 function init_grid() {
 
+    // Create an empty grid
     let empty_x_list = [];
     for (let x = 0; x < grid_x; x++) {
         empty_x_list.push(0);
@@ -85,20 +104,25 @@ function init_grid() {
         grid.push(empty_x_list.slice());
     }
 
-    head_coords[0] = lolrand(grid_y);
+    // Place the head in the top half of the grid
+    head_coords[0] = lolrand(Math.floor(grid_y / 2));
     head_coords[1] = lolrand(grid_x);
     grid[ head_coords[0] ][ head_coords[1] ] = 1;
-
-    food_coords[0] = lolrand(grid_y);
+    snake_coords.push(head_coords.slice());
+    // and the food in the bottom half
+    food_coords[0] = Math.floor(grid_y / 2) + lolrand(Math.floor(grid_y / 2));
     food_coords[1] = lolrand(grid_x);
     grid[ food_coords[0] ][ food_coords[1] ] = 2;
 
+    // On each frame, we'll be coloring the squares created by these lines, but
+    // not touching the lines themselves.  That means we can get away with only
+    // drawing them once.
     for (let x = 0; x <= grid_x; x++) {
         ctx.beginPath();
         ctx.moveTo(x * grid_size, 0);
         ctx.lineTo(x * grid_size, canvas_width);
         ctx.lineWidth = 2;
-        ctx.strokeStyle = '#aaaaaa';
+        ctx.strokeStyle = grid_line_color;
         ctx.stroke();
         ctx.closePath();
     }
@@ -108,7 +132,7 @@ function init_grid() {
         ctx.moveTo(0, y * grid_size);
         ctx.lineTo(canvas_width, y * grid_size);
         ctx.lineWidth = 2;
-        ctx.strokeStyle = '#aaaaaa';
+        ctx.strokeStyle = grid_line_color;
         ctx.stroke();
         ctx.closePath();
     }
@@ -116,6 +140,8 @@ function init_grid() {
 
 function move_head(x, y) {
     grid[ head_coords[0] ][ head_coords[1] ] = 0;
+    // Snake coordinates are stored oldest first, newest last.
+    snake_coords.shift();
 
     head_coords[0] += y;
     if (head_coords[0] >= grid_y) {
@@ -134,6 +160,7 @@ function move_head(x, y) {
     }
 
     grid[ head_coords[0] ][ head_coords[1] ] = 1;
+    snake_coords.push(head_coords.slice());
 }
 
 window.addEventListener('keydown', function (event) {
