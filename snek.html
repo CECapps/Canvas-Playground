@@ -45,6 +45,10 @@ const head_coords = [0, 0];
 const food_coords = [1, 1];
 const snake_coords = [ /* [y, x], [y, x], ... */ ];
 
+const growth_per_food = 10;
+let grow_skip = 0;
+let move_food = false;
+
 let start_time = 0;
 let last_time = 0;
 let call_count = 0;
@@ -71,6 +75,18 @@ function draw(timestamp) {
 
     for (const snake_coord of snake_coords) {
         grid[ snake_coord[0] ][ snake_coord[1] ] = 1;
+    }
+
+    if (move_food) {
+        let new_food_x = lolrand(grid_x);
+        let new_food_y = lolrand(grid_y);
+        while (grid[ new_food_y ][ new_food_x ] != 0) {
+            new_food_x = lolrand(grid_x);
+            new_food_y = lolrand(grid_y);
+        }
+        food_coords[0] = new_food_y;
+        food_coords[1] = new_food_x;
+        move_food = false;
     }
 
     grid[ food_coords[0] ][ food_coords[1] ] = 2;
@@ -138,7 +154,6 @@ function init_grid() {
     }
 }
 
-let grow_skip = 0;
 function move_head(x, y) {
     grid[ head_coords[0] ][ head_coords[1] ] = 0;
 
@@ -160,7 +175,8 @@ function move_head(x, y) {
 
     // The snake found the food => grow
     if (grid[ head_coords[0] ][ head_coords[1] ] == 2) {
-        grow_skip += 2;
+        grow_skip += growth_per_food;
+        move_food = true;
     }
 
     if (grow_skip > 0) {
