@@ -14,6 +14,7 @@
           style="border: 7px inset black;">
             If you can see this, something has gone kablooie.
         </canvas>
+        <p id="running"></p>
         <p id="perf"></p>
         <p id="direction"></p>
         <p id="sneklen"></p>
@@ -56,6 +57,7 @@ let grow_skip = 0;
 let move_food = false;
 let current_direction = 'ArrowRight';
 let next_direction = 'ArrowRight';
+let game_running = true;
 
 let start_time = 0;
 let last_time = 0;
@@ -69,6 +71,7 @@ function game_loop(timestamp) {
 
     if ( Math.floor(timestamp / 1000) > Math.floor(last_time / 1000) ) {
         document.getElementById('perf').textContent = call_count / (timestamp / 1000);
+        document.getElementById('running').textContent = "running";
     }
     last_time = timestamp;
 
@@ -89,7 +92,12 @@ function game_loop(timestamp) {
         draw(timestamp);
     }
 
-    window.requestAnimationFrame(game_loop);
+    // The game ends if we've hit ourself.
+    if (game_running) {
+        window.requestAnimationFrame(game_loop);
+    } else {
+        document.getElementById('running').textContent = "stopped"
+    }
 }
 
 
@@ -212,6 +220,11 @@ function move_head(x, y) {
     }
     if (head_coords[1] < 0) {
         head_coords[1] = grid_x - 1;
+    }
+
+    // Did we collide with ourself?
+    if (grid[ head_coords[0] ][ head_coords[1] ] == 1) {
+        game_running = false;
     }
 
     // The snake found the food => grow
